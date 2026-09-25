@@ -30,9 +30,10 @@ $requiredTokens = @(
     'state.quickRestorePending',
     'allowFallback',
     'candidate.InventorySlot',
-    '/Script/Dominion.InventoryComponent:UseItemFromInventory',
-    '/Script/Dominion.InventoryComponent:Server_UseItemFromInventory',
-    'activePage * SLOTS_PER_PAGE + incomingSlot',
+    '/Script/Dominion.RadialMenuBase:SelectSlice',
+    'state.pendingUse',
+    'state.directUseBypass',
+    'radial.CachedSectionId = 255',
     'data:GetName()',
     'LoopAsync(cfg.PollMilliseconds'
 )
@@ -59,7 +60,6 @@ foreach ($key in $expectedKeys) {
 foreach ($unsafeCall in @(
     'data:GetIcon()',
     'data:GetCategoryClassIcon()',
-    '/Script/Dominion.RadialMenuBase:SelectSlice',
     'pending.api:HandleInternalUseItem'
 )) {
     if ($lua.Contains($unsafeCall)) {
