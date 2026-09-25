@@ -25,8 +25,9 @@ $requiredTokens = @(
     'PageChangeCooldownMilliseconds',
     'sourceImage.Brush',
     'targetImage:SetBrush(brush)',
-    '/Script/Dominion.RadialMenuBase:SelectSlice',
-    'pending.api:HandleInternalUseItem(pending.slot, INVENTORY_ITEMS)',
+    'incomingType ~= QUICK_ACTION',
+    'state.routingUntil',
+    'state.quickRestorePending',
     'data:GetName()',
     'LoopAsync(cfg.PollMilliseconds'
 )
@@ -50,7 +51,12 @@ foreach ($key in $expectedKeys) {
     }
 }
 
-foreach ($unsafeCall in @('data:GetIcon()', 'data:GetCategoryClassIcon()')) {
+foreach ($unsafeCall in @(
+    'data:GetIcon()',
+    'data:GetCategoryClassIcon()',
+    '/Script/Dominion.RadialMenuBase:SelectSlice',
+    'pending.api:HandleInternalUseItem'
+)) {
     if ($lua.Contains($unsafeCall)) {
         throw "Unsafe UE4SS soft-object read is present: $unsafeCall"
     }
