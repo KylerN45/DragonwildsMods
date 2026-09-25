@@ -1,6 +1,12 @@
-# Expanded Quick Access
+# Dragonwilds Mods
 
-Expanded Quick Access adds inventory pages to the RuneScape: Dragonwilds quick-access radial menu.
+This repository contains Lua mods for RuneScape: Dragonwilds.
+
+Each mod is in the `mods` directory.
+
+## Expanded Quick Access
+
+Expanded Quick Access adds inventory pages to the quick-access radial menu.
 
 The first page is the standard eight-slot quick-access bar. The next three pages contain the 24 main-inventory slots. The mod does not move items between slots.
 

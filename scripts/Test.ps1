@@ -3,9 +3,9 @@ param()
 
 $ErrorActionPreference = 'Stop'
 $projectRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
-$mainLua = Join-Path $projectRoot 'mod\ExpandedQuickAccess\Scripts\main.lua'
-$config = Join-Path $projectRoot 'mod\ExpandedQuickAccess\config.txt'
-$enabled = Join-Path $projectRoot 'mod\ExpandedQuickAccess\enabled.txt'
+$mainLua = Join-Path $projectRoot 'mods\ExpandedQuickAccess\Scripts\main.lua'
+$config = Join-Path $projectRoot 'mods\ExpandedQuickAccess\config.txt'
+$enabled = Join-Path $projectRoot 'mods\ExpandedQuickAccess\enabled.txt'
 
 foreach ($path in @($mainLua, $config, $enabled)) {
     if (-not (Test-Path $path -PathType Leaf)) {

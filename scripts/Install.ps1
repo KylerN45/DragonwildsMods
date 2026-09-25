@@ -5,7 +5,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $projectRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
-$source = Join-Path $projectRoot 'mod\ExpandedQuickAccess'
+$source = Join-Path $projectRoot 'mods\ExpandedQuickAccess'
 $destination = Join-Path $UE4SSModsDirectory 'ExpandedQuickAccess'
 
 if (-not (Test-Path $UE4SSModsDirectory -PathType Container)) {
