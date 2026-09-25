@@ -25,10 +25,14 @@ $requiredTokens = @(
     'PageChangeCooldownMilliseconds',
     'sourceImage.Brush',
     'targetImage:SetBrush(brush)',
-    'incomingType ~= QUICK_ACTION',
+    'local incomingType = parameterValue(slotTypeParameter)',
     'state.routingUntil',
     'state.quickRestorePending',
     'allowFallback',
+    'candidate.InventorySlot',
+    '/Script/Dominion.InventoryComponent:UseItemFromInventory',
+    '/Script/Dominion.InventoryComponent:Server_UseItemFromInventory',
+    'activePage * SLOTS_PER_PAGE + incomingSlot',
     'data:GetName()',
     'LoopAsync(cfg.PollMilliseconds'
 )
