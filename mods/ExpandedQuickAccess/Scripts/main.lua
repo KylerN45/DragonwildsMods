@@ -1,8 +1,8 @@
--- Expanded Quick Access v0.1.5
+-- Expanded Quick Access v0.1.6
 -- Adds the three main-inventory rows to the standard eight-slice quick-access radial.
 
 local TAG = "[ExpandedQuickAccess] "
-local MOD_VERSION = "0.1.5"
+local MOD_VERSION = "0.1.6"
 local PAGE_COUNT = 4
 local SLOTS_PER_PAGE = 8
 local QUICK_ACTION = 0
@@ -312,11 +312,16 @@ local function collectVisualSources(inventoryType, excludedNames)
     return sources
 end
 
-local function findVisualSource(sources, inventoryIndex, item)
+local function findVisualSource(sources, inventoryIndex, item, allowFallback)
     local candidates = sources[inventoryIndex]
     if candidates == nil then return nil end
     for _, candidate in ipairs(candidates) do
         if valid(candidate) and slotItemMatches(candidate, item) then return candidate end
+    end
+    if allowFallback then
+        for _, candidate in ipairs(candidates) do
+            if valid(candidate) then return candidate end
+        end
     end
     return nil
 end
@@ -441,7 +446,7 @@ local function applyPage(radial, page)
     local resolvedVisuals = {}
     for zeroIndex = 0, SLOTS_PER_PAGE - 1 do
         local item = arrayItem(items, offset + zeroIndex)
-        local source = findVisualSource(visualSources, offset + zeroIndex, item)
+        local source = findVisualSource(visualSources, offset + zeroIndex, item, page == 0)
         if not valid(source) then
             return false, "inventory slot visuals are not ready; open the inventory once"
         end
@@ -479,6 +484,7 @@ local function changePage(delta)
     local ok, reason = applyPage(radial, nextPage)
     if ok then
         state.page = nextPage
+        if nextPage ~= 0 then state.quickRestorePending = false end
     else
         log("could not change page: " .. tostring(reason))
     end
@@ -553,7 +559,7 @@ local function tick()
     state.wasOpen = open
 
     if open then
-        if state.quickRestorePending and now >= state.nextRestoreAt then
+        if state.page == 0 and state.quickRestorePending and now >= state.nextRestoreAt then
             local restored, reason = applyPage(radial, 0)
             if restored then
                 state.quickRestorePending = false
@@ -564,11 +570,9 @@ local function tick()
             end
         end
 
-        if not state.quickRestorePending then
-            local controller = findLocalController()
-            if isLocalController(controller) then pollPageInput(controller) end
-            showSelectedItemName(radial)
-        end
+        local controller = findLocalController()
+        if isLocalController(controller) then pollPageInput(controller) end
+        showSelectedItemName(radial)
     end
 end
 

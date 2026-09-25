@@ -28,6 +28,7 @@ $requiredTokens = @(
     'incomingType ~= QUICK_ACTION',
     'state.routingUntil',
     'state.quickRestorePending',
+    'allowFallback',
     'data:GetName()',
     'LoopAsync(cfg.PollMilliseconds'
 )
@@ -60,6 +61,10 @@ foreach ($unsafeCall in @(
     if ($lua.Contains($unsafeCall)) {
         throw "Unsafe UE4SS soft-object read is present: $unsafeCall"
     }
+}
+
+if ($lua.Contains('if not state.quickRestorePending then')) {
+    throw 'Page input must not wait for quick-access restoration.'
 }
 
 Write-Host 'Static tests passed.'
