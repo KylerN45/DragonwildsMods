@@ -1,0 +1,8 @@
+# Expanded Quick Access configuration
+PollMilliseconds=16
+PageChangeCooldownMilliseconds=200
+TriggerThreshold=0.55
+LeftKeyboardKey=Q
+RightKeyboardKey=E
+ShowPageLabel=true
+DebugLogging=false

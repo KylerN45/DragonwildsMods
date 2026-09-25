@@ -1,0 +1,59 @@
+[CmdletBinding()]
+param()
+
+$ErrorActionPreference = 'Stop'
+$projectRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
+$mainLua = Join-Path $projectRoot 'mod\ExpandedQuickAccess\Scripts\main.lua'
+$config = Join-Path $projectRoot 'mod\ExpandedQuickAccess\config.txt'
+$enabled = Join-Path $projectRoot 'mod\ExpandedQuickAccess\enabled.txt'
+
+foreach ($path in @($mainLua, $config, $enabled)) {
+    if (-not (Test-Path $path -PathType Leaf)) {
+        throw "Required file is missing: $path"
+    }
+}
+
+$lua = Get-Content $mainLua -Raw
+$requiredTokens = @(
+    'Gamepad_LeftTrigger',
+    'Gamepad_RightTrigger',
+    'GetInventorySlots(INVENTORY_ITEMS)',
+    'GetQuickActionSlots()',
+    'HandleInternalUseItem',
+    'payload.InventoryIndex = inventoryIndex',
+    'payload.OwningInventoryType = inventoryType',
+    'PageChangeCooldownMilliseconds',
+    'sourceImage.Brush',
+    'targetImage:SetBrush(brush)',
+    '/Script/Dominion.RadialMenuBase:SelectSlice',
+    'pending.api:HandleInternalUseItem(pending.slot, INVENTORY_ITEMS)',
+    'data:GetName()',
+    'LoopAsync(cfg.PollMilliseconds'
+)
+foreach ($token in $requiredTokens) {
+    if (-not $lua.Contains($token)) {
+        throw "Required Lua integration is missing: $token"
+    }
+}
+
+if ((Get-Content $enabled -Raw).Trim() -ne '1') {
+    throw 'enabled.txt must contain 1.'
+}
+
+$configKeys = Get-Content $config |
+    Where-Object { $_ -match '^\s*[A-Za-z]' } |
+    ForEach-Object { ($_ -split '=', 2)[0].Trim() }
+$expectedKeys = @('PollMilliseconds', 'PageChangeCooldownMilliseconds', 'TriggerThreshold', 'LeftKeyboardKey', 'RightKeyboardKey', 'ShowPageLabel', 'DebugLogging')
+foreach ($key in $expectedKeys) {
+    if ($configKeys -notcontains $key) {
+        throw "Required configuration key is missing: $key"
+    }
+}
+
+foreach ($unsafeCall in @('data:GetIcon()', 'data:GetCategoryClassIcon()')) {
+    if ($lua.Contains($unsafeCall)) {
+        throw "Unsafe UE4SS soft-object read is present: $unsafeCall"
+    }
+}
+
+Write-Host 'Static tests passed.'
