@@ -1,8 +1,8 @@
--- Expanded Quick Access v0.1.8
+-- Expanded Quick Access v0.1.9
 -- Adds the three main-inventory rows to the standard eight-slice quick-access radial.
 
 local TAG = "[ExpandedQuickAccess] "
-local MOD_VERSION = "0.1.8"
+local MOD_VERSION = "0.1.9"
 local PAGE_COUNT = 4
 local SLOTS_PER_PAGE = 8
 local QUICK_ACTION = 0
@@ -36,10 +36,8 @@ local state = {
     errors = 0,
     disabled = false,
     rerouteCount = 0,
-    directUseCount = 0,
-    directUseBypass = false,
-    pendingUse = nil,
-    lastSelected = -1,
+    localUseRerouteCount = 0,
+    serverUseRerouteCount = 0,
     nextPageChangeAt = 0,
     routingPage = 0,
     routingUntil = 0,
@@ -413,8 +411,6 @@ local function showSelectedItemName(radial)
         showPageLabel(radial, state.page)
         return
     end
-    state.lastSelected = selected
-
     local api = findInventoryAPI(radial)
     local items, _, offset = pageItems(api, state.page)
     local item = arrayItem(items, offset + selected)
@@ -536,24 +532,6 @@ end
 local function tick()
     if state.disabled then return end
 
-    local pending = state.pendingUse
-    state.pendingUse = nil
-    if pending ~= nil and valid(pending.api) then
-        local api = pending.api
-        state.directUseBypass = true
-        local used, message = pcall(function()
-            api:HandleInternalUseItem(pending.slot, INVENTORY_ITEMS)
-        end)
-        state.directUseBypass = false
-        if used then
-            state.directUseCount = state.directUseCount + 1
-            log("used inventory slot " .. tostring(pending.slot) .. " from radial page "
-                .. tostring(pending.page + 1))
-        else
-            log("could not use the selected inventory item: " .. tostring(message))
-        end
-    end
-
     local radial = state.radial
     if not usableRadial(radial) then
         local now = os.clock()
@@ -567,7 +545,6 @@ local function tick()
     local open = radialIsOpen(radial)
     if open and not state.wasOpen then
         state.page = 0
-        state.lastSelected = -1
         state.routingPage = 0
         state.routingUntil = 0
         state.quickRestorePending = true
@@ -626,81 +603,33 @@ local function routingPage()
     return 0
 end
 
-local function registerUseRerouteHook()
-    local function preHook(context, slotNumberParameter, slotTypeParameter)
-        if state.disabled or state.directUseBypass then return end
-        local incomingSlot = parameterValue(slotNumberParameter)
-        local incomingType = parameterValue(slotTypeParameter)
-        if incomingSlot == nil or incomingSlot < 0 or incomingSlot >= SLOTS_PER_PAGE then return end
-
-        local activePage = routingPage()
-        if activePage == 0 then return end
-
-        local wantedSlot = (activePage - 1) * SLOTS_PER_PAGE + incomingSlot
-
-        local slotSet = setParameter(slotNumberParameter, wantedSlot)
-        local typeSet = setParameter(slotTypeParameter, INVENTORY_ITEMS)
-        if slotSet and typeSet then
-            state.rerouteCount = state.rerouteCount + 1
-            log("routed radial slot " .. tostring(incomingSlot)
-                .. " to inventory slot " .. tostring(wantedSlot) .. " through InventoryUIAPI"
-                .. " (incoming type " .. tostring(incomingType) .. ")")
-        else
-            log("could not reroute a radial selection; the item was not used")
-        end
-    end
-
-    local ok, preId = pcall(RegisterHook,
-        "/Script/Dominion.InventoryUIAPI:HandleInternalUseItem", preHook, function() end)
-    if not ok then
-        log("could not register the inventory-use hook: " .. tostring(preId))
-        return false
-    end
-    return true
-end
-
-local function registerRadialSelectionHook()
-    local function preHook(context)
+local function registerInventoryUseHook(functionName, counterName)
+    local function preHook(context, inventoryParameter, slotIndexParameter, externalParameter)
         if state.disabled then return end
         local activePage = routingPage()
         if activePage == 0 then return end
 
-        local radial = unwrap(context)
-        if not valid(radial) then return end
+        local incomingSlot = parameterValue(slotIndexParameter)
+        if incomingSlot == nil or incomingSlot < 0 or incomingSlot >= SLOTS_PER_PAGE then return end
 
-        local selected = nil
-        pcall(function() selected = tonumber(radial.CachedSectionId) end)
-        if selected == nil or selected < 0 or selected >= SLOTS_PER_PAGE then
-            selected = state.lastSelected
-        end
-        if selected == nil or selected < 0 or selected >= SLOTS_PER_PAGE then
-            log("could not identify the selected radial slice")
+        -- InventoryController addresses the player's contiguous physical inventory.
+        -- Slots 0-7 are quick access. Main inventory rows start at slots 8, 16, and 24.
+        local wantedSlot = activePage * SLOTS_PER_PAGE + incomingSlot
+        if not setParameter(slotIndexParameter, wantedSlot) then
+            log("could not reroute the selected inventory slot through " .. functionName)
             return
         end
 
-        local api = state.inventoryAPI
-        if not valid(api) then
-            log("could not use the selected item because the inventory API is unavailable")
-            return
-        end
-
-        local suppressed = pcall(function() radial.CachedSectionId = 255 end)
-        if not suppressed then
-            log("could not suppress the original quick-slot selection")
-            return
-        end
-
-        state.pendingUse = {
-            api = api,
-            page = activePage,
-            slot = (activePage - 1) * SLOTS_PER_PAGE + selected,
-        }
+        state.rerouteCount = state.rerouteCount + 1
+        state[counterName] = state[counterName] + 1
+        log("routed physical inventory slot " .. tostring(incomingSlot) .. " to "
+            .. tostring(wantedSlot) .. " through InventoryController:" .. functionName)
     end
 
     local ok, preId = pcall(RegisterHook,
-        "/Script/Dominion.RadialMenuBase:SelectSlice", preHook, function() end)
+        "/Script/Dominion.InventoryController:" .. functionName, preHook, function() end)
     if not ok then
-        log("could not register the radial-selection hook: " .. tostring(preId))
+        log("could not register InventoryController:" .. functionName .. ": " .. tostring(preId))
         return false
     end
     return true
@@ -713,10 +642,10 @@ local function registerStatusCommand()
             log("usage: expandedquickaccess status")
             return true
         end
-        log(string.format("status: version=%s, radial=%s, open=%s, page=%d, inventoryAPI=%s, reroutes=%d, directUses=%d, restorePending=%s, errors=%d",
+        log(string.format("status: version=%s, radial=%s, open=%s, page=%d, inventoryAPI=%s, reroutes=%d, localReroutes=%d, serverReroutes=%d, restorePending=%s, errors=%d",
             MOD_VERSION, tostring(usableRadial(state.radial)), tostring(radialIsOpen(state.radial)),
             state.page, tostring(valid(state.inventoryAPI)), state.rerouteCount,
-            state.directUseCount,
+            state.localUseRerouteCount, state.serverUseRerouteCount,
             tostring(state.quickRestorePending),
             state.errors))
         return true
@@ -729,8 +658,10 @@ state.rightTriggerKey = makeFKey("Gamepad_RightTrigger")
 state.leftKeyboardKey = makeFKey(cfg.LeftKeyboardKey)
 state.rightKeyboardKey = makeFKey(cfg.RightKeyboardKey)
 
-local hookReady = registerUseRerouteHook()
-local selectionHookReady = registerRadialSelectionHook()
+local localUseHookReady = registerInventoryUseHook(
+    "UseItemFromInventory", "localUseRerouteCount")
+local serverUseHookReady = registerInventoryUseHook(
+    "Server_UseItemFromInventory", "serverUseRerouteCount")
 registerStatusCommand()
 
 LoopAsync(cfg.PollMilliseconds, function()
@@ -754,7 +685,7 @@ LoopAsync(cfg.PollMilliseconds, function()
     return false
 end)
 
-log(string.format("loaded v%s; 4 radial pages enabled; triggers=%s; keyboard=%s/%s; useHook=%s; selectionHook=%s",
+log(string.format("loaded v%s; 4 radial pages enabled; triggers=%s; keyboard=%s/%s; localUseHook=%s; serverUseHook=%s",
     MOD_VERSION, tostring(state.leftTriggerKey ~= nil and state.rightTriggerKey ~= nil),
-    tostring(cfg.LeftKeyboardKey), tostring(cfg.RightKeyboardKey), tostring(hookReady),
-    tostring(selectionHookReady)))
+    tostring(cfg.LeftKeyboardKey), tostring(cfg.RightKeyboardKey), tostring(localUseHookReady),
+    tostring(serverUseHookReady)))

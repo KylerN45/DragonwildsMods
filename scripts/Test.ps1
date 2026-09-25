@@ -19,21 +19,20 @@ $requiredTokens = @(
     'Gamepad_RightTrigger',
     'GetInventorySlots(INVENTORY_ITEMS)',
     'GetQuickActionSlots()',
-    'HandleInternalUseItem',
     'payload.InventoryIndex = inventoryIndex',
     'payload.OwningInventoryType = inventoryType',
     'PageChangeCooldownMilliseconds',
     'sourceImage.Brush',
     'targetImage:SetBrush(brush)',
-    'local incomingType = parameterValue(slotTypeParameter)',
     'state.routingUntil',
     'state.quickRestorePending',
     'allowFallback',
     'candidate.InventorySlot',
-    '/Script/Dominion.RadialMenuBase:SelectSlice',
-    'state.pendingUse',
-    'state.directUseBypass',
-    'radial.CachedSectionId = 255',
+    '/Script/Dominion.InventoryController:',
+    '"UseItemFromInventory", "localUseRerouteCount"',
+    '"Server_UseItemFromInventory", "serverUseRerouteCount"',
+    'preHook(context, inventoryParameter, slotIndexParameter, externalParameter)',
+    'activePage * SLOTS_PER_PAGE + incomingSlot',
     'data:GetName()',
     'LoopAsync(cfg.PollMilliseconds'
 )
@@ -60,15 +59,32 @@ foreach ($key in $expectedKeys) {
 foreach ($unsafeCall in @(
     'data:GetIcon()',
     'data:GetCategoryClassIcon()',
-    'pending.api:HandleInternalUseItem'
+    '/Script/Dominion.InventoryComponent:UseItemFromInventory',
+    '/Script/Dominion.RadialMenuBase:SelectSlice',
+    'HandleInternalUseItem(pending.slot'
 )) {
     if ($lua.Contains($unsafeCall)) {
-        throw "Unsafe UE4SS soft-object read is present: $unsafeCall"
+        throw "Unsafe or obsolete integration is present: $unsafeCall"
     }
 }
 
 if ($lua.Contains('if not state.quickRestorePending then')) {
     throw 'Page input must not wait for quick-access restoration.'
+}
+
+$expectedPhysicalSlots = @(
+    @(8, 9, 10, 11, 12, 13, 14, 15),
+    @(16, 17, 18, 19, 20, 21, 22, 23),
+    @(24, 25, 26, 27, 28, 29, 30, 31)
+)
+for ($page = 1; $page -le 3; $page++) {
+    for ($slice = 0; $slice -lt 8; $slice++) {
+        $actual = $page * 8 + $slice
+        $expected = $expectedPhysicalSlots[$page - 1][$slice]
+        if ($actual -ne $expected) {
+            throw "Page $page slice $slice routed to $actual instead of $expected."
+        }
+    }
 }
 
 Write-Host 'Static tests passed.'

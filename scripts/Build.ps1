@@ -13,7 +13,7 @@ $OutputDirectory = if ([string]::IsNullOrWhiteSpace($OutputDirectory)) {
 }
 $output = [System.IO.Path]::GetFullPath($OutputDirectory)
 $stage = Join-Path $output 'ExpandedQuickAccess'
-$archive = Join-Path $output 'ExpandedQuickAccess-v0.1.8.zip'
+$archive = Join-Path $output 'ExpandedQuickAccess-v0.1.9.zip'
 
 if (-not (Test-Path $source -PathType Container)) {
     throw "The mod source was not found: $source"
