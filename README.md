@@ -1,6 +1,6 @@
 # Dragonwilds Mods
 
-This repository contains Lua mods for RuneScape: Dragonwilds.
+This repository contains mods for RuneScape: Dragonwilds.
 
 Each mod is in the `mods` directory.
 
@@ -30,7 +30,8 @@ Page changes wrap at each end.
 ## Requirements
 
 - RuneScape: Dragonwilds for Windows
-- UE4SS 3.0.1 or a compatible later version
+- UE4SS 3.0.1 Beta 0, build `f6d5f942`
+- The Microsoft Visual C++ Redistributable for Visual Studio 2015-2022
 
 ## Installation
 
@@ -44,8 +45,10 @@ The installed structure must be:
 ue4ss\Mods\ExpandedQuickAccess\
 ├── enabled.txt
 ├── config.txt
-└── Scripts\
-    └── main.lua
+├── Scripts\
+│   └── main.lua
+└── dlls\
+    └── main.dll
 ```
 
 For the standard Steam installation used during development, the destination is:
@@ -73,3 +76,13 @@ Set a keyboard key to `none` to disable it.
 2. Delete the installed `ExpandedQuickAccess` folder.
 
 The mod does not change save data. It changes only live UI state and routes item use through the game's inventory API.
+
+## Technical design
+
+The Lua component changes the eight visible radial slices. It writes the inventory index and inventory type to each slice payload.
+
+The native component changes one direct game call in the quick-access radial selection function. It reads the selected slice payload. It then calls the standard inventory API with that payload. The component restores the original call when UE4SS unloads the mod.
+
+The native component uses unique code signatures. It does not apply the change if the signatures do not match the installed game build.
+
+The native component writes its status to `ExpandedQuickAccess.log` in the installed mod folder. Check this file if page selection stays on the quick-access item.

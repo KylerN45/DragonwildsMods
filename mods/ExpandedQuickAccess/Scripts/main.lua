@@ -1,8 +1,8 @@
--- Expanded Quick Access v0.1.9
+-- Expanded Quick Access v0.2.0
 -- Adds the three main-inventory rows to the standard eight-slice quick-access radial.
 
 local TAG = "[ExpandedQuickAccess] "
-local MOD_VERSION = "0.1.9"
+local MOD_VERSION = "0.2.0"
 local PAGE_COUNT = 4
 local SLOTS_PER_PAGE = 8
 local QUICK_ACTION = 0
@@ -35,12 +35,7 @@ local state = {
     queuedAt = 0,
     errors = 0,
     disabled = false,
-    rerouteCount = 0,
-    localUseRerouteCount = 0,
-    serverUseRerouteCount = 0,
     nextPageChangeAt = 0,
-    routingPage = 0,
-    routingUntil = 0,
     quickRestorePending = true,
     nextRestoreAt = 0,
 }
@@ -545,8 +540,6 @@ local function tick()
     local open = radialIsOpen(radial)
     if open and not state.wasOpen then
         state.page = 0
-        state.routingPage = 0
-        state.routingUntil = 0
         state.quickRestorePending = true
         state.nextRestoreAt = 0
         state.nextPageChangeAt = 0
@@ -554,11 +547,7 @@ local function tick()
         findInventoryAPI(radial)
         debugLog("radial opened")
     elseif not open and state.wasOpen then
-        if state.page ~= 0 then
-            state.routingPage = state.page
-            state.routingUntil = now + 0.5
-            state.quickRestorePending = true
-        end
+        if state.page ~= 0 then state.quickRestorePending = true end
         state.page = 0
         resetInputEdges()
         debugLog("radial closed")
@@ -583,58 +572,6 @@ local function tick()
     end
 end
 
-local function parameterValue(parameter)
-    local value = unwrap(parameter)
-    if type(value) == "number" then return value end
-    return tonumber(value)
-end
-
-local function setParameter(parameter, value)
-    local ok = pcall(function() parameter:set(value) end)
-    return ok
-end
-
-local function routingPage()
-    if state.page > 0 and state.page < PAGE_COUNT then return state.page end
-    if os.clock() <= state.routingUntil
-        and state.routingPage > 0 and state.routingPage < PAGE_COUNT then
-        return state.routingPage
-    end
-    return 0
-end
-
-local function registerInventoryUseHook(functionName, counterName)
-    local function preHook(context, inventoryParameter, slotIndexParameter, externalParameter)
-        if state.disabled then return end
-        local activePage = routingPage()
-        if activePage == 0 then return end
-
-        local incomingSlot = parameterValue(slotIndexParameter)
-        if incomingSlot == nil or incomingSlot < 0 or incomingSlot >= SLOTS_PER_PAGE then return end
-
-        -- InventoryController addresses the player's contiguous physical inventory.
-        -- Slots 0-7 are quick access. Main inventory rows start at slots 8, 16, and 24.
-        local wantedSlot = activePage * SLOTS_PER_PAGE + incomingSlot
-        if not setParameter(slotIndexParameter, wantedSlot) then
-            log("could not reroute the selected inventory slot through " .. functionName)
-            return
-        end
-
-        state.rerouteCount = state.rerouteCount + 1
-        state[counterName] = state[counterName] + 1
-        log("routed physical inventory slot " .. tostring(incomingSlot) .. " to "
-            .. tostring(wantedSlot) .. " through InventoryController:" .. functionName)
-    end
-
-    local ok, preId = pcall(RegisterHook,
-        "/Script/Dominion.InventoryController:" .. functionName, preHook, function() end)
-    if not ok then
-        log("could not register InventoryController:" .. functionName .. ": " .. tostring(preId))
-        return false
-    end
-    return true
-end
-
 local function registerStatusCommand()
     pcall(RegisterConsoleCommandHandler, "expandedquickaccess", function(_, parameters)
         local command = parameters and parameters[1] and tostring(parameters[1]):lower() or "status"
@@ -642,11 +579,9 @@ local function registerStatusCommand()
             log("usage: expandedquickaccess status")
             return true
         end
-        log(string.format("status: version=%s, radial=%s, open=%s, page=%d, inventoryAPI=%s, reroutes=%d, localReroutes=%d, serverReroutes=%d, restorePending=%s, errors=%d",
+        log(string.format("status: version=%s, radial=%s, open=%s, page=%d, inventoryAPI=%s, restorePending=%s, errors=%d",
             MOD_VERSION, tostring(usableRadial(state.radial)), tostring(radialIsOpen(state.radial)),
-            state.page, tostring(valid(state.inventoryAPI)), state.rerouteCount,
-            state.localUseRerouteCount, state.serverUseRerouteCount,
-            tostring(state.quickRestorePending),
+            state.page, tostring(valid(state.inventoryAPI)), tostring(state.quickRestorePending),
             state.errors))
         return true
     end)
@@ -658,10 +593,6 @@ state.rightTriggerKey = makeFKey("Gamepad_RightTrigger")
 state.leftKeyboardKey = makeFKey(cfg.LeftKeyboardKey)
 state.rightKeyboardKey = makeFKey(cfg.RightKeyboardKey)
 
-local localUseHookReady = registerInventoryUseHook(
-    "UseItemFromInventory", "localUseRerouteCount")
-local serverUseHookReady = registerInventoryUseHook(
-    "Server_UseItemFromInventory", "serverUseRerouteCount")
 registerStatusCommand()
 
 LoopAsync(cfg.PollMilliseconds, function()
@@ -685,7 +616,6 @@ LoopAsync(cfg.PollMilliseconds, function()
     return false
 end)
 
-log(string.format("loaded v%s; 4 radial pages enabled; triggers=%s; keyboard=%s/%s; localUseHook=%s; serverUseHook=%s",
+log(string.format("loaded v%s; 4 radial pages enabled; triggers=%s; keyboard=%s/%s; native selection router required",
     MOD_VERSION, tostring(state.leftTriggerKey ~= nil and state.rightTriggerKey ~= nil),
-    tostring(cfg.LeftKeyboardKey), tostring(cfg.RightKeyboardKey), tostring(localUseHookReady),
-    tostring(serverUseHookReady)))
+    tostring(cfg.LeftKeyboardKey), tostring(cfg.RightKeyboardKey)))
