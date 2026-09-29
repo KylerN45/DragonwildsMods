@@ -1,0 +1,90 @@
+Chest Item Placeholder 1.0.0
+============================
+
+Chest Item Placeholder keeps a configured amount of each item in a player-built chest.
+This release supports RuneScape: Dragonwilds 1.0.
+It targets game build CL-244954.
+
+Requirements
+------------
+
+- RuneScape: Dragonwilds for Windows
+- UE4SS 3.0.1 or a later compatible release
+
+Installation
+------------
+
+1. Close the game.
+2. Copy the ChestItemPlaceholder folder into the UE4SS Mods folder.
+3. Start the game.
+
+The installed structure must be:
+
+ue4ss\Mods\ChestItemPlaceholder\
+|- enabled.txt
+|- instructions.txt
+`- Scripts\
+   |- config.lua
+   |- chest_item_placeholder_active.txt
+   `- main.lua
+
+Do not add an entry to mods.txt. The enabled.txt file enables the mod.
+
+Use
+---
+
+Open a player-built chest.
+The "Keep item placeholders in this chest" option is enabled by default.
+The option appears above the Take All, Fill Stacks, and Sort controls.
+Clear the option to disable protection for the open chest.
+The option resets when you open another chest.
+Click and drag, the A button, right trigger, and Control+click respect the leave amount.
+The transferred item can briefly appear in the player inventory.
+The mod returns the reserved amount through the game server.
+If exactly one item of a type is already in the chest, you can take that final item.
+
+Press F6 to disable or enable the mod.
+The mod saves this global state in Scripts\chest_item_placeholder_active.txt.
+
+Configuration
+-------------
+
+Edit Scripts\config.lua while the game is closed.
+Set PLACEHOLDER_AMOUNT to the number of each item that must remain.
+The default value is 1.
+The final single item is always removable.
+
+The console command "chestitemplaceholder status" prints the current state.
+The console command "chestitemplaceholder toggle" changes the global state.
+
+Compatibility
+-------------
+
+The mod provides the public ChestItemPlaceholder.active value.
+It also provides ChestItemPlaceholder.placeholderAmount and ChestItemPlaceholder.version.
+Other mods can read these values.
+
+The mod compares chest loss with local player gain.
+It ignores chest changes that do not give the same item to the local player.
+The mod uses a game server transfer function to return the reserved amount.
+It does not create replacement items.
+It does not change item durability or item state data.
+The inventory monitor runs only on the game thread.
+The mod releases its chest UI references when the chest screen closes.
+
+Troubleshooting
+---------------
+
+Open ue4ss\UE4SS.log.
+Search for [ChestItemPlaceholder].
+Look for the "reserve guard is active" line.
+Look for a "returning" line with a chest slot after you transfer the last item.
+Include these log lines when you report a problem.
+
+Removal
+-------
+
+1. Close the game.
+2. Delete the ChestItemPlaceholder folder from the UE4SS Mods folder.
+
+The mod does not change save data.

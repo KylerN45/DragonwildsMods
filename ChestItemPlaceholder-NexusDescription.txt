@@ -1,0 +1,101 @@
+[center][color=#D4D4D8]
+A   K Y L E R   P R O J E C T[/color][/center]
+[center][color=#D4D4D8][url=https://ko-fi.com/kylernyhagen][img]https://i.imgur.com/mDgb3Kt.png[/img][/url]
+
+Chest Item Placeholder[/color][/center]
+[center][color=#D4D4D8][i]Keep item types visible in storage[/i]
+
+[i]A quality-of-life mod by Kyler[/i][/color][/center]
+
+
+
+[center][color=#D4D4D8][color=#e4e4e7]Chest Item Placeholder keeps a configured number of items in a player-built chest when you transfer a stack. This helps you remember which item types belong in each chest.[/color][/color][/center]
+
+
+
+[center][color=#D4D4D8]CHEST ORGANIZATION · LESS INVENTORY WORK[/color][/center]
+[line]
+[color=#D4D4D8]W H A T   I S   T H E   M O D[/color]
+
+
+Chest Item Placeholder monitors transfers from player-built chests. If one transfer would take a stack from more than one item to zero, the mod returns the configured reserve to the chest. The default reserve is one item.
+
+You can still take the final item later. If a transfer starts with exactly one item in the chest, the mod permits that transfer.
+
+[list]
+[*][color=#D4D4D8]Supports RuneScape: Dragonwilds 1.0. It was tested with game build CL-244954.[/color][/*]
+[*][color=#D4D4D8]Requires UE4SS 3.0.1 or a later compatible release.[/color][/*]
+[*][color=#D4D4D8]Works with Crates, Ash Chests, Oak Chests, Iron Chests, and other player storage that supports the same game inventory system.[/color][/*]
+[*][color=#D4D4D8]Supports click and drag, the A button, right trigger, and Control+click transfers.[/color][/*]
+[*][color=#D4D4D8]Adds a controller-focusable option above the Take All, Fill Stacks, and Sort controls.[/color][/*]
+[*][color=#D4D4D8]Lets you disable protection for the open chest.[/color][/*]
+[*][color=#D4D4D8]Press F6 to disable or enable the mod globally.[/color][/*]
+[/list]
+
+
+[line]
+[color=#D4D4D8]I N S T A L L A T I O N[/color]
+
+
+[list=1]
+[*][color=#D4D4D8]Install UE4SS 3.0.1 or a later compatible release.[/color][/*]
+[*][color=#D4D4D8]Close the game.[/color][/*]
+[*][color=#D4D4D8]Open RSDragonwilds\RSDragonwilds\Binaries\Win64\ue4ss\Mods in the game installation folder.[/color][/*]
+[*][color=#D4D4D8]Copy the included mod folder into the Mods folder.[/color][/*]
+[*][color=#D4D4D8]Start the game. The included enabled.txt file enables the mod.[/color][/*]
+[/list]
+
+
+[line]
+[color=#D4D4D8]C O N F I G U R A T I O N[/color]
+
+
+Close the game before you change the configuration.
+
+Open Scripts\config.lua. Set PLACEHOLDER_AMOUNT to the number of items that the mod must return after a protected transfer. The default value is 1.
+
+The final single item is always removable.
+
+
+[line]
+[color=#D4D4D8]H O W   I T   W O R K S[/color]
+
+
+The mod compares the chest item loss with the local player inventory gain. It returns the reserve when the same item moves to the local player. It uses the game server inventory transfer function to return the item to its original chest slot.
+
+The transferred item can appear briefly in the player inventory before the reserve returns to the chest.
+
+The mod provides the public ChestItemPlaceholder.active value. It also provides ChestItemPlaceholder.placeholderAmount and ChestItemPlaceholder.version. Other mods can read these values.
+
+
+[line]
+[color=#D4D4D8]D E V E L O P M E N T   D I S C L O S U R E[/color]
+
+
+[list]
+[*][color=#D4D4D8]I used generative AI extensively for API investigation and code development. I reviewed the implementation and tested the released behavior in the game.[/color][/*]
+[*][color=#D4D4D8]The source code is available here: [url=https://github.com/KylerN45/DragonwildsMods]KylerN45/DragonwildsMods[/url].[/color][/*]
+[/list]
+
+
+[line]
+[color=#D4D4D8]C R E D I T S[/color]
+
+
+[color=#D4D4D8]The original [url=https://www.nexusmods.com/runescapedragonwilds/mods/439]LeaveJustOne mod by bburge14[/url] established this storage feature and its VicinityProcessing compatibility interface. Chest Item Placeholder uses a rewritten implementation for RuneScape: Dragonwilds 1.0.[/color]
+
+
+[line]
+[color=#D4D4D8]F A Q[/color]
+
+
+[list]
+[*][color=#D4D4D8][b]Does it support controllers?[/b] - Yes. The chest option supports controller focus. The A button and right trigger transfer methods are supported.[/color][/*]
+[*][color=#D4D4D8][b]Can I take the final item?[/b] - Yes. Transfer the reserved single item as a separate action.[/color][/*]
+[*][color=#D4D4D8][b]Why does an item briefly appear in my inventory?[/b] - The mod verifies the completed local transfer before it returns the reserve through the game server.[/color][/*]
+[*][color=#D4D4D8][b]Does it support multiplayer?[/b] - The mod filters for transfers to the local player. Multiplayer behavior needs more testing.[/color][/*]
+[*][color=#D4D4D8][b]Does it support Game Pass?[/b] - Game Pass has not been tested.[/color][/*]
+[/list]
+
+[center]
+[/center]

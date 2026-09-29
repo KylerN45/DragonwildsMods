@@ -4,6 +4,24 @@ This repository contains mods for RuneScape: Dragonwilds.
 
 Each mod is in the `mods` directory.
 
+## Chest Item Placeholder
+
+Chest Item Placeholder keeps a configured amount of each item in a player-built chest.
+
+Version 1.0.0 supports RuneScape: Dragonwilds 1.0.
+It uses the current server-authoritative inventory transfer functions.
+It does not remove an item from the player or create a replacement item after a transfer.
+
+Build and test it with these commands:
+
+```powershell
+.\scripts\Test-ChestItemPlaceholder.ps1
+.\scripts\Build-ChestItemPlaceholder.ps1
+```
+
+The release package is written to the `dist` directory.
+See `mods\ChestItemPlaceholder\instructions.txt` for installation, use, and configuration information.
+
 ## Expanded Quick Access
 
 Expanded Quick Access adds inventory pages to the quick-access radial menu.
